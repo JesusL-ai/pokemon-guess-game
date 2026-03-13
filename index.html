@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Pokemon Guess Who</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:0;
+text-align:center;
+color:white;
+
+/* POKEBALL PATTERN BACKGROUND */
+
+background-color:#1b1b1b;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg opacity='0.25'%3E%3Ccircle cx='60' cy='60' r='40' fill='red'/%3E%3Crect x='20' y='58' width='80' height='4' fill='black'/%3E%3Ccircle cx='60' cy='60' r='14' fill='white' stroke='black' stroke-width='4'/%3E%3C/g%3E%3C/svg%3E");
+
+background-size:140px;
+
+}
+
+h1{
+background:#ef5350;
+color:white;
+padding:15px;
+margin:0;
+}
+
+#controls{
+padding:10px;
+}
+
+button,select{
+
+padding:10px;
+margin:5px;
+border:none;
+border-radius:8px;
+font-size:14px;
+
+}
+
+button{
+background:#3b4cca;
+color:white;
+cursor:pointer;
+}
+
+#grid{
+
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+gap:10px;
+padding:10px;
+
+}
+
+.card{
+
+background:white;
+border-radius:10px;
+padding:10px;
+box-shadow:0 3px 6px rgba(0,0,0,0.3);
+color:black;
+
+}
+
+.card img{
+width:100%;
+}
+
+.card.removed{
+opacity:0.25;
+}
+
+.selected{
+border:4px solid limegreen;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Pokemon Guess Who </h1>
+
+<div id="controls">
+
+<button onclick="newGame()">New Game</button>
+
+<label>Type:</label>
+
+<select id="typeSelect">
+
+<option value="all">All Types</option>
+<option value="water">Water</option>
+<option value="fire">Fire</option>
+<option value="grass">Grass</option>
+<option value="electric">Electric</option>
+<option value="psychic">Psychic</option>
+<option value="ice">Ice</option>
+<option value="dragon">Dragon</option>
+<option value="dark">Dark</option>
+<option value="fairy">Fairy</option>
+<option value="normal">Normal</option>
+<option value="fighting">Fighting</option>
+<option value="flying">Flying</option>
+<option value="poison">Poison</option>
+<option value="ground">Ground</option>
+<option value="rock">Rock</option>
+<option value="bug">Bug</option>
+<option value="ghost">Ghost</option>
+<option value="steel">Steel</option>
+
+</select>
+
+</div>
+
+<h3 id="status">Choose your Pokémon</h3>
+
+<div id="grid"></div>
+
+<script>
+
+const TOTAL_POKEMON = 1025
+let selectionMode = true
+
+function capitalize(name){
+return name.charAt(0).toUpperCase()+name.slice(1)
+}
+
+async function newGame(){
+
+document.getElementById("grid").innerHTML=""
+selectionMode=true
+
+document.getElementById("status").innerText="Choose your Pokémon"
+
+let type=document.getElementById("typeSelect").value
+
+let pokemonList=[]
+
+if(type==="all"){
+
+let ids=new Set()
+
+while(ids.size<40){
+ids.add(Math.floor(Math.random()*TOTAL_POKEMON)+1)
+}
+
+pokemonList=[...ids]
+
+}else{
+
+let response=await fetch(`https://pokeapi.co/api/v2/type/${type}`)
+let data=await response.json()
+
+let all=data.pokemon.map(p=>p.pokemon)
+
+while(pokemonList.length<40){
+
+let random=all[Math.floor(Math.random()*all.length)]
+let id=random.url.split("/")[6]
+
+if(!pokemonList.includes(id)){
+pokemonList.push(id)
+}
+
+}
+
+}
+
+let promises=pokemonList.map(id=>
+fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r=>r.json())
+)
+
+let results=await Promise.all(promises)
+
+results.forEach(data=>{
+
+let card=document.createElement("div")
+
+card.className="card"
+
+let name=capitalize(data.name)
+
+card.innerHTML=`
+
+<img loading="lazy" src="${data.sprites.other["official-artwork"].front_default}">
+<p>${name}</p>
+
+`
+
+card.onclick=()=>{
+
+if(selectionMode){
+
+selectionMode=false
+card.classList.add("selected")
+
+document.getElementById("status").innerText=
+"Your Pokémon is "+name+" — eliminate others!"
+
+}else{
+
+card.classList.toggle("removed")
+
+}
+
+}
+
+document.getElementById("grid").appendChild(card)
+
+})
+
+}
+
+newGame()
+
+</script>
+
+</body>
+</html>
