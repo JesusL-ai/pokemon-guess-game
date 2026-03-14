@@ -16,12 +16,9 @@ margin:0;
 text-align:center;
 color:white;
 
-/* pokeball pattern */
-
 background-color:#1b1b1b;
 background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg opacity='0.25'%3E%3Ccircle cx='60' cy='60' r='40' fill='red'/%3E%3Crect x='20' y='58' width='80' height='4' fill='black'/%3E%3Ccircle cx='60' cy='60' r='14' fill='white' stroke='black' stroke-width='4'/%3E%3C/g%3E%3C/svg%3E");
 background-size:140px;
-
 }
 
 h1{
@@ -81,6 +78,12 @@ opacity:0.25;
 border:4px solid limegreen;
 }
 
+#matchCode{
+font-size:18px;
+font-weight:bold;
+color:yellow;
+}
+
 </style>
 
 </head>
@@ -95,9 +98,9 @@ border:4px solid limegreen;
 
 <button onclick="joinMatch()">Join Match</button>
 
-<button onclick="shareMatch()">Share Match</button>
-
 <button onclick="newGame()">New Random Game</button>
+
+<div id="matchCode"></div>
 
 <label>Type:</label>
 
@@ -191,6 +194,8 @@ document.getElementById("grid").appendChild(card)
 
 }
 
+/* CREATE MATCH */
+
 function createMatch(){
 
 currentBoard=[]
@@ -205,47 +210,33 @@ currentBoard.push(id)
 
 }
 
-updateURL()
+let code=currentBoard.join("-")
+
+document.getElementById("matchCode").innerText=
+"Match Code: "+code
+
 generateBoard(currentBoard)
 
 }
 
-function updateURL(){
-
-let code=currentBoard.join("-")
-
-let url=window.location.origin+
-window.location.pathname+
-"?board="+code
-
-window.history.replaceState(null,null,url)
-
-}
-
-function shareMatch(){
-
-if(currentBoard.length===0){
-alert("Create a match first!")
-return
-}
-
-let url=window.location.href
-
-navigator.clipboard.writeText(url)
-
-alert("Match link copied! Send it to your opponent.")
-
-}
+/* JOIN MATCH */
 
 function joinMatch(){
 
-let link=prompt("Paste the match link")
+let code=prompt("Enter Match Code")
 
-if(!link) return
+if(!code) return
 
-window.location.href=link
+currentBoard=code.split("-")
+
+generateBoard(currentBoard)
+
+document.getElementById("matchCode").innerText=
+"Match Code: "+code
 
 }
+
+/* RANDOM GAME */
 
 async function newGame(){
 
@@ -289,19 +280,7 @@ generateBoard(currentBoard)
 
 }
 
-const params=new URLSearchParams(window.location.search)
-
-if(params.has("board")){
-
-currentBoard=params.get("board").split("-")
-
-generateBoard(currentBoard)
-
-}else{
-
 newGame()
-
-}
 
 </script>
 
