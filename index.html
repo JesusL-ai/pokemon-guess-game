@@ -16,18 +16,16 @@ margin:0;
 text-align:center;
 color:white;
 
-/* POKEBALL PATTERN BACKGROUND */
+/* pokeball pattern */
 
 background-color:#1b1b1b;
 background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg opacity='0.25'%3E%3Ccircle cx='60' cy='60' r='40' fill='red'/%3E%3Crect x='20' y='58' width='80' height='4' fill='black'/%3E%3Ccircle cx='60' cy='60' r='14' fill='white' stroke='black' stroke-width='4'/%3E%3C/g%3E%3C/svg%3E");
-
 background-size:140px;
 
 }
 
 h1{
 background:#ef5350;
-color:white;
 padding:15px;
 margin:0;
 }
@@ -89,11 +87,17 @@ border:4px solid limegreen;
 
 <body>
 
-<h1>Pokemon Guess Who </h1>
+<h1>Pokemon Guess Who</h1>
 
 <div id="controls">
 
-<button onclick="newGame()">New Game</button>
+<button onclick="createMatch()">Create Match</button>
+
+<button onclick="joinMatch()">Join Match</button>
+
+<button onclick="shareMatch()">Share Match</button>
+
+<button onclick="newGame()">New Random Game</button>
 
 <label>Type:</label>
 
@@ -130,54 +134,21 @@ border:4px solid limegreen;
 <script>
 
 const TOTAL_POKEMON = 1025
-let selectionMode = true
+let currentBoard=[]
+let selectionMode=true
 
 function capitalize(name){
 return name.charAt(0).toUpperCase()+name.slice(1)
 }
 
-async function newGame(){
+async function generateBoard(list){
 
 document.getElementById("grid").innerHTML=""
 selectionMode=true
 
 document.getElementById("status").innerText="Choose your Pokémon"
 
-let type=document.getElementById("typeSelect").value
-
-let pokemonList=[]
-
-if(type==="all"){
-
-let ids=new Set()
-
-while(ids.size<40){
-ids.add(Math.floor(Math.random()*TOTAL_POKEMON)+1)
-}
-
-pokemonList=[...ids]
-
-}else{
-
-let response=await fetch(`https://pokeapi.co/api/v2/type/${type}`)
-let data=await response.json()
-
-let all=data.pokemon.map(p=>p.pokemon)
-
-while(pokemonList.length<40){
-
-let random=all[Math.floor(Math.random()*all.length)]
-let id=random.url.split("/")[6]
-
-if(!pokemonList.includes(id)){
-pokemonList.push(id)
-}
-
-}
-
-}
-
-let promises=pokemonList.map(id=>
+let promises=list.map(id=>
 fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r=>r.json())
 )
 
@@ -192,10 +163,8 @@ card.className="card"
 let name=capitalize(data.name)
 
 card.innerHTML=`
-
 <img loading="lazy" src="${data.sprites.other["official-artwork"].front_default}">
 <p>${name}</p>
-
 `
 
 card.onclick=()=>{
@@ -222,10 +191,119 @@ document.getElementById("grid").appendChild(card)
 
 }
 
+function createMatch(){
+
+currentBoard=[]
+
+while(currentBoard.length<40){
+
+let id=Math.floor(Math.random()*TOTAL_POKEMON)+1
+
+if(!currentBoard.includes(id)){
+currentBoard.push(id)
+}
+
+}
+
+updateURL()
+generateBoard(currentBoard)
+
+}
+
+function updateURL(){
+
+let code=currentBoard.join("-")
+
+let url=window.location.origin+
+window.location.pathname+
+"?board="+code
+
+window.history.replaceState(null,null,url)
+
+}
+
+function shareMatch(){
+
+if(currentBoard.length===0){
+alert("Create a match first!")
+return
+}
+
+let url=window.location.href
+
+navigator.clipboard.writeText(url)
+
+alert("Match link copied! Send it to your opponent.")
+
+}
+
+function joinMatch(){
+
+let link=prompt("Paste the match link")
+
+if(!link) return
+
+window.location.href=link
+
+}
+
+async function newGame(){
+
+let type=document.getElementById("typeSelect").value
+
+currentBoard=[]
+
+if(type==="all"){
+
+while(currentBoard.length<40){
+
+let id=Math.floor(Math.random()*TOTAL_POKEMON)+1
+
+if(!currentBoard.includes(id)){
+currentBoard.push(id)
+}
+
+}
+
+}else{
+
+let response=await fetch(`https://pokeapi.co/api/v2/type/${type}`)
+let data=await response.json()
+
+let all=data.pokemon.map(p=>p.pokemon)
+
+while(currentBoard.length<40){
+
+let random=all[Math.floor(Math.random()*all.length)]
+let id=random.url.split("/")[6]
+
+if(!currentBoard.includes(id)){
+currentBoard.push(id)
+}
+
+}
+
+}
+
+generateBoard(currentBoard)
+
+}
+
+const params=new URLSearchParams(window.location.search)
+
+if(params.has("board")){
+
+currentBoard=params.get("board").split("-")
+
+generateBoard(currentBoard)
+
+}else{
+
 newGame()
+
+}
 
 </script>
 
 </body>
-
 </html>
